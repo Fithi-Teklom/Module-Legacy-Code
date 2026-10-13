@@ -196,34 +196,6 @@ def get_bloom(id_str):
         return make_response((f"Bloom not found", 404))
     return jsonify(bloom)
 
-
-# @jwt_required()
-# def home_timeline():
-#     current_user = get_current_user()
-
-#     # Get blooms from followed users
-#     followed_users = get_followed_usernames(current_user)
-#     nested_user_blooms = [
-#         blooms.get_blooms_for_user(followed_user, limit=50)
-#         for followed_user in followed_users
-#     ]
-
-#     # Flatten list of blooms from followed users
-#     followed_blooms = [bloom for blooms in nested_user_blooms for bloom in blooms]
-
-#     # Get the current user's own blooms
-#     own_blooms = blooms.get_blooms_for_user(current_user.username, limit=50)
-
-#     # Combine own blooms with followed blooms
-#     all_blooms = followed_blooms + own_blooms
-
-#     # Sort by timestamp (newest first)
-#     sorted_blooms = list(
-#         sorted(all_blooms, key=lambda bloom: bloom.sent_timestamp, reverse=True)
-#     )
-
-#     return jsonify(sorted_blooms)
-
 @jwt_required()
 def home_timeline():
     current_user = get_current_user()
