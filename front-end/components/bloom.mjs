@@ -21,13 +21,26 @@ const createBloom = (template, bloom) => {
 
   rebloomButton?.addEventListener("click", async () => {
     rebloomButton.disabled = true;
-    const result = await apiService.rebloomBloom(bloom.id);
+    const originalText = rebloomButton.textContent;
 
-    if (result.success) {
-      window.location.reload();
-    } else {
+    try {
+      const result = await apiService.rebloomBloom(bloom.id);
+
+      if (result.success) {
+        rebloomButton.textContent = "Re-bloomed successfully!";
+        rebloomButton.setAttribute("aria-live", "polite");
+
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
+      } else {
+        rebloomButton.disabled = false;
+        rebloomButton.textContent = "Already re-bloomed";
+      }
+    } catch (error) {
       rebloomButton.disabled = false;
-      rebloomButton.textContent = "Already re-bloomed";
+      rebloomButton.textContent = originalText;
+      console.error("Failed to re-bloom:", error);
     }
   });
   const bloomUsername = bloomFrag.querySelector("[data-username]");

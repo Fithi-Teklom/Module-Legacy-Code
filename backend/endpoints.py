@@ -110,8 +110,30 @@ def other_profile(profile_username):
     current_user = get_current_user()
 
     followers = get_inverse_followed_usernames(profile_user)
-    all_blooms = blooms.get_blooms_for_user(profile_username)
-    all_blooms.reverse()
+    original_blooms = blooms.get_blooms_for_user(profile_username)
+    user_reblooms = blooms.get_reblooms_for_user(profile_username)
+
+    all_blooms = [
+        {
+            "id": bloom.id,
+            "sender": bloom.sender,
+            "content": bloom.content,
+            "sent_timestamp": bloom.sent_timestamp,
+            "rebloomed_by": None,
+            "rebloom_timestamp": None,
+        }
+        for bloom in original_blooms
+    ]
+
+    all_blooms.extend(user_reblooms)
+
+    all_blooms.sort(
+        key=lambda bloom: (
+            bloom["rebloom_timestamp"] or bloom["sent_timestamp"]
+        ),
+        reverse=True,
+    )
+
     return jsonify(
         {
             "username": profile_username,
@@ -125,7 +147,6 @@ def other_profile(profile_username):
             "total_blooms": len(all_blooms),
         }
     )
-
 
 @jwt_required()
 def do_follow():
@@ -243,12 +264,32 @@ def home_timeline():
 
     return jsonify(sorted_blooms)
 
-
 def user_blooms(profile_username):
     user_blooms = blooms.get_blooms_for_user(profile_username)
-    user_blooms.reverse()
-    return jsonify(user_blooms)
+    user_reblooms = blooms.get_reblooms_for_user(profile_username)
 
+    all_blooms = [
+        {
+            "id": bloom.id,
+            "sender": bloom.sender,
+            "content": bloom.content,
+            "sent_timestamp": bloom.sent_timestamp,
+            "rebloomed_by": None,
+            "rebloom_timestamp": None,
+        }
+        for bloom in user_blooms
+    ]
+
+    all_blooms.extend(user_reblooms)
+
+    all_blooms.sort(
+        key=lambda bloom: (
+            bloom["rebloom_timestamp"] or bloom["sent_timestamp"]
+        ),
+        reverse=True,
+    )
+
+    return jsonify(all_blooms)
 
 @jwt_required()
 def suggested_follows(limit_str):
