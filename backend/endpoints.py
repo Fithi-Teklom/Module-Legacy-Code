@@ -244,7 +244,6 @@ def home_timeline():
     return jsonify(sorted_blooms)
 
 
-
 def user_blooms(profile_username):
     user_blooms = blooms.get_blooms_for_user(profile_username)
     user_blooms.reverse()

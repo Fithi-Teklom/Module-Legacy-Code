@@ -1,3 +1,4 @@
+import { apiService } from "../index.mjs";
 /**
  * Create a bloom component
  * @param {string} template - The ID of the template to clone
@@ -16,6 +17,19 @@ const createBloom = (template, bloom) => {
   const bloomParser = new DOMParser();
 
   const bloomArticle = bloomFrag.querySelector("[data-bloom]");
+  const rebloomButton = bloomFrag.querySelector("[data-action='rebloom']");
+
+  rebloomButton?.addEventListener("click", async () => {
+    rebloomButton.disabled = true;
+    const result = await apiService.rebloomBloom(bloom.id);
+
+    if (result.success) {
+      window.location.reload();
+    } else {
+      rebloomButton.disabled = false;
+      rebloomButton.textContent = "Already re-bloomed";
+    }
+  });
   const bloomUsername = bloomFrag.querySelector("[data-username]");
   const bloomTime = bloomFrag.querySelector("[data-time]");
   const bloomTimeLink = bloomFrag.querySelector("a:has(> [data-time])");
