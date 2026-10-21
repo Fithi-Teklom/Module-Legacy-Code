@@ -1,4 +1,5 @@
 import { apiService } from "../index.mjs";
+import { state } from "../lib/state.mjs";
 /**
  * Create a bloom component
  * @param {string} template - The ID of the template to clone
@@ -18,31 +19,28 @@ const createBloom = (template, bloom) => {
 
   const bloomArticle = bloomFrag.querySelector("[data-bloom]");
   const rebloomButton = bloomFrag.querySelector("[data-action='rebloom']");
-
+   if (rebloomButton && (bloom.sender === state.currentUser || bloom.has_rebloomed)) {
+      rebloomButton.hidden = true;
+   } 
   rebloomButton?.addEventListener("click", async () => {
-    rebloomButton.disabled = true;
-    const originalText = rebloomButton.textContent;
+  rebloomButton.disabled = true;
+  const originalText = rebloomButton.textContent;
 
-    try {
-      const result = await apiService.rebloomBloom(bloom.id);
+  try {
+    const result = await apiService.rebloomBloom(bloom.id);
 
-      if (result.success) {
-        rebloomButton.textContent = "Re-bloomed successfully!";
-        rebloomButton.setAttribute("aria-live", "polite");
-
-        setTimeout(() => {
-          window.location.reload();
-        }, 1000);
-      } else {
-        rebloomButton.disabled = false;
-        rebloomButton.textContent = "Already re-bloomed";
-      }
-    } catch (error) {
+    if (result.success) {
+      rebloomButton.hidden = true;
+    } else {
       rebloomButton.disabled = false;
-      rebloomButton.textContent = originalText;
-      console.error("Failed to re-bloom:", error);
+      rebloomButton.textContent = "Already re-bloomed";
     }
-  });
+  } catch (error) {
+    rebloomButton.disabled = false;
+    rebloomButton.textContent = originalText;
+    console.error("Failed to re-bloom:", error);
+  }
+});
   const bloomUsername = bloomFrag.querySelector("[data-username]");
   const bloomTime = bloomFrag.querySelector("[data-time]");
   const bloomTimeLink = bloomFrag.querySelector("a:has(> [data-time])");

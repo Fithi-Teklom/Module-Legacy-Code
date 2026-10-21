@@ -94,24 +94,9 @@ def self_profile():
         }
     )
 
-
-@jwt_required(optional=True)
-def other_profile(profile_username):
-    # Check if the user exists
-    profile_user = get_user(profile_username)
-    if profile_user is None:
-        return make_response(
-            jsonify(
-                {"success": False, "message": f"User {profile_username} not found"}
-            ),
-            404,
-        )
-
-    current_user = get_current_user()
-
-    followers = get_inverse_followed_usernames(profile_user)
-    original_blooms = blooms.get_blooms_for_user(profile_username)
-    user_reblooms = blooms.get_reblooms_for_user(profile_username)
+def get_user_blooms_with_reblooms(username):
+    original_blooms = blooms.get_blooms_for_user(username)
+    user_reblooms = blooms.get_reblooms_for_user(username)
 
     all_blooms = [
         {
@@ -133,6 +118,25 @@ def other_profile(profile_username):
         ),
         reverse=True,
     )
+
+    return all_blooms
+
+@jwt_required(optional=True)
+def other_profile(profile_username):
+    # Check if the user exists
+    profile_user = get_user(profile_username)
+    if profile_user is None:
+        return make_response(
+            jsonify(
+                {"success": False, "message": f"User {profile_username} not found"}
+            ),
+            404,
+        )
+
+    current_user = get_current_user()
+
+    followers = get_inverse_followed_usernames(profile_user)
+    all_blooms = get_user_blooms_with_reblooms(profile_username)
 
     return jsonify(
         {
@@ -205,21 +209,40 @@ def send_rebloom(id_str):
 
     return jsonify({"success": True})
 
-
-
+@jwt_required(optional=True)
 def get_bloom(id_str):
     try:
         id_int = int(id_str)
     except ValueError:
-        return make_response((f"Invalid bloom id", 400))
+        return make_response(("Invalid bloom id", 400))
+
     bloom = blooms.get_bloom(id_int)
     if bloom is None:
-        return make_response((f"Bloom not found", 404))
-    return jsonify(bloom)
+        return make_response(("Bloom not found", 404))
+
+    current_user = get_current_user()
+
+    return jsonify({
+        "id": bloom.id,
+        "sender": bloom.sender,
+        "content": bloom.content,
+        "sent_timestamp": bloom.sent_timestamp,
+        "has_rebloomed": (
+            current_user is not None
+            and blooms.has_rebloomed(user=current_user, bloom_id=bloom.id)
+        ),
+    })
 
 @jwt_required()
 def home_timeline():
     current_user = get_current_user()
+
+    def add_rebloom_status(bloom_data):
+        bloom_data["has_rebloomed"] = blooms.has_rebloomed(
+            user=current_user,
+            bloom_id=bloom_data["id"],
+        )
+        return bloom_data
 
     followed_users = get_followed_usernames(current_user)
 
@@ -261,34 +284,15 @@ def home_timeline():
         key=lambda bloom: bloom["rebloom_timestamp"] or bloom["sent_timestamp"],
         reverse=True,
     )
+    sorted_blooms = [
+    add_rebloom_status(bloom_data)
+    for bloom_data in sorted_blooms
+    ]
 
     return jsonify(sorted_blooms)
 
 def user_blooms(profile_username):
-    user_blooms = blooms.get_blooms_for_user(profile_username)
-    user_reblooms = blooms.get_reblooms_for_user(profile_username)
-
-    all_blooms = [
-        {
-            "id": bloom.id,
-            "sender": bloom.sender,
-            "content": bloom.content,
-            "sent_timestamp": bloom.sent_timestamp,
-            "rebloomed_by": None,
-            "rebloom_timestamp": None,
-        }
-        for bloom in user_blooms
-    ]
-
-    all_blooms.extend(user_reblooms)
-
-    all_blooms.sort(
-        key=lambda bloom: (
-            bloom["rebloom_timestamp"] or bloom["sent_timestamp"]
-        ),
-        reverse=True,
-    )
-
+    all_blooms = get_user_blooms_with_reblooms(profile_username)
     return jsonify(all_blooms)
 
 @jwt_required()

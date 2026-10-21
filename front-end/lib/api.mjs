@@ -168,7 +168,6 @@ async function getBlooms(username) {
 
     return blooms;
   } catch (error) {
-    // Error already handled by _apiRequest
     if (username) {
       _updateProfile(username, {blooms: []});
     } else {
@@ -177,7 +176,21 @@ async function getBlooms(username) {
     return [];
   }
 }
+async function rebloomBloom(bloomId) {
+  try {
+    const result = await _apiRequest(`/bloom/${bloomId}/rebloom`, {
+      method: "POST",
+    });
 
+    if (result.success) {
+      await getBlooms();
+    }
+
+    return result;
+  } catch (error) {
+    return { success: false };
+  }
+}
 /**
  * Fetches blooms containing a specific hashtag
  */
@@ -214,16 +227,6 @@ async function postBloom(content) {
   } catch (error) {
     // Error already handled by _apiRequest
     return {success: false};
-  }
-}
-
-async function rebloomBloom(bloomId) {
-  try {
-    return await _apiRequest(`/bloom/${bloomId}/rebloom`, {
-      method: "POST",
-    });
-  } catch (error) {
-    return { success: false };
   }
 }
 

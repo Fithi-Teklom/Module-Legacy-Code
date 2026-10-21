@@ -54,6 +54,20 @@ def add_rebloom(*, user: User, bloom_id: int) -> bool:
 
     return True
 
+def has_rebloomed(*, user: User, bloom_id: int) -> bool:
+    with db_cursor() as cur:
+        cur.execute(
+            """
+            SELECT EXISTS (
+                SELECT 1
+                FROM reblooms
+                WHERE user_id = %(user_id)s
+                  AND bloom_id = %(bloom_id)s
+            )
+            """,
+            {"user_id": user.id, "bloom_id": bloom_id},
+        )
+        return cur.fetchone()[0]
 
 def get_blooms_for_user(
     username: str, *, before: Optional[int] = None, limit: Optional[int] = None
