@@ -12,10 +12,7 @@ function loginView() {
     createLogin
   );
   const form = getLoginContainer().querySelector("[data-form='login']");
- form?.addEventListener("submit", (event) => { 
-  event.preventDefault();
-   handleLogin(event);
- })
+  form?.addEventListener("submit", handleLogin);
 }
 
 export {loginView};
